@@ -1,0 +1,48 @@
+name: Convert M3U to JSON
+
+on:
+  workflow_dispatch:
+    inputs:
+      m3u_url:
+        description: 'url m3u'
+        required: true
+        type: string
+      output_filename:
+        description: 'nombre de json'
+        required: false
+        type: string
+        default: 'playlist'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install requests m3u8
+
+    - name: Download M3U file
+      run: |
+        wget -O input.m3u "${{ github.event.inputs.m3u_url }}"
+        echo "Archivo M3U descargado:"
+        head -n 20 input.m3u
+
+    - name: Convert M3U to JSON
+      run: |
+        python m3u_to_json.py input.m3u "${{ github.event.inputs.output_filename }}.json"
+        echo "Archivo JSON generado:"
+        head "${{ github.event.inputs.output_filename }}.json"
+
+    - name: Upload JSON file
+      uses: actions/upload-artifact@v4
+      with:
+        name: json-playlist
+        path: ${{ github.event.inputs.output_filename }}.json
+        # include-hidden-files: true   # <-- optional, only if you need hidden files included
